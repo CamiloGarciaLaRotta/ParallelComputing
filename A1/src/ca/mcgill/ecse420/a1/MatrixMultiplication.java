@@ -1,8 +1,12 @@
 package ca.mcgill.ecse420.a1;
 
+import java.util.ArrayList;
 import java.util.InputMismatchException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MatrixMultiplication {
 
@@ -14,6 +18,7 @@ public class MatrixMultiplication {
 		// Generate two random matrices, same size
 		double[][] a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 		double[][] b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+
 		sequentialMultiplyMatrix(a, b);
 		parallelMultiplyMatrix(a, b);
 	}
@@ -31,13 +36,13 @@ public class MatrixMultiplication {
 		}
 
 		final int ROWS_A = a.length;
-		final int COLS_A = a[0].length;
 		final int COLS_B = b[0].length;
+		final int INNER_DIM = a[0].length;
 		double[][] C = new double[ROWS_A][COLS_B];
 
 		for (int r=0; r<ROWS_A; r++) {
 			for (int c=0; c<COLS_B; c++) {
-				for (int k=0; k<COLS_A; k++) {
+				for (int k=0; k<INNER_DIM; k++) {
 					C[r][c] += a[r][k] * b[k][c];
 				}
 			}
@@ -49,7 +54,6 @@ public class MatrixMultiplication {
 	/**
 	 * Returns the result of a concurrent matrix multiplication The two matrices are
 	 * randomly generated
-	 *
 	 * @param a is the first matrix
 	 * @param b is the second matrix
 	 * @return the result of the multiplication
@@ -60,35 +64,68 @@ public class MatrixMultiplication {
 		}
 
 		final int ROWS_A = a.length;
-		final int COLS_A = a[0].length;
 		final int COLS_B = b[0].length;
+		final int INNER_DIM = a[0].length;
 		final double[][] C = new double[ROWS_A][COLS_B];
 
-	// 	ExecutorService executor = Executors.newCachedThreadPool();
+		// instantiate an ExecutorService and a list of tasks to execute
+		final int numOfTasks = ROWS_A * COLS_B;
+		ExecutorService executor = Executors.newFixedThreadPool(NUMBER_THREADS);
+		ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(numOfTasks);
 
-	// 	for (int r=0; r<ROWS_A; r++) {
-	// 		for (int c=0; c<COLS_B; c++) {
-	// 			executor.execute(new Runnable() {
+		for (int r=0; r<ROWS_A; r++) {
+			for (int c=0; c<COLS_B; c++) {
+				// add every dot product task to the list of tasks to execute
+				tasks.add(Executors.callable(new DotProductTask(a, b, C, r, c, INNER_DIM)));
+			}
+		}
 
-	// 				public void run() {
-	// 					for (int k=0; k<COLS_A; k++) {
-	// 						C[r][c] += a[r][k] * b[k][c];
-	// 					}
-	// 				}
-	// 			});
-	// 		}
-	// 	}
-
-	// 	executor.shutdown();
-	// 	while (executor.isTerminated() == false) {
-	// 		try {
-	// 			Thread.sleep(50);
-	// 		} catch (InterruptedException e) {
-	// 			e.printStackTrace();
-	// 		}
-	// 	}
+		try {
+			// execute and wait for all tasks to complete
+			executor.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 
 		return C;
+	}
+
+	/**
+	 * Calculates the dot product of 2 vectors
+	 * then writes the result in the correspondent row/col of an output matrix
+	 */
+	private static class DotProductTask implements Runnable {
+		double[][] a, b, C;
+		int row, col, dim;
+		private Lock lock = new ReentrantLock();
+
+		public DotProductTask(double[][] a, double[][] b, double[][] C, final int row,final int col, final int dim) {
+			this.a = a;
+			this.b = b;
+			this.C = C;
+			this.row = row;
+			this.col = col;
+			this.dim = dim;
+		}
+
+		public void run() {
+			double result = 0;
+			// perform the dot product
+			for (int k=0; k<dim; k++) {
+				result += a[row][k] * b[k][col];
+			}
+
+			// update the cell with the result of the dot product
+			// this is the only operation that requires mutual exclusivity
+			lock.lock();
+			try {
+				C[row][col] = result;
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+			  lock.unlock();
+			}
+		}
 	}
 
 	/**

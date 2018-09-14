@@ -23,7 +23,7 @@ public class TestMatrixMultiplication {
 
 
     @Test
-    public void testSequentialMatrixMultiplication() {
+    public void testMatrixMultiplication() {
         TestCase[] testCases = new TestCase[3];
         testCases[0] = new TestCase(
             new double[][]{
@@ -65,17 +65,28 @@ public class TestMatrixMultiplication {
                 { 4, 5, 6 },
             },
             new double[][]{
-                { 7, 8},
-                { 9, 10},
-                { 11, 12}
+                { 7, 8 },
+                { 9, 10 },
+                { 11, 12 }
             },
             new double[][]{
                 { 58, 64 },
                 { 139, 154}
             }
         );
+
+        long startTime = System.nanoTime();
         for (TestCase tc : testCases) {
             assertArrayEquals(tc.expected, MatrixMultiplication.sequentialMultiplyMatrix(tc.a, tc.b));
         }
+        long stopTime = System.nanoTime();
+        System.out.println("Sequential execution took:\t" + (stopTime-startTime) + "ns");
+
+        startTime = System.nanoTime();
+        for (TestCase tc : testCases) {
+            assertArrayEquals(tc.expected, MatrixMultiplication.parallelMultiplyMatrix(tc.a, tc.b));
+        }
+        stopTime = System.nanoTime();
+        System.out.println("Parallel execution took:\t" + (stopTime-startTime) + "ns");
     }
 }
