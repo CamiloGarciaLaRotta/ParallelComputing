@@ -11,17 +11,26 @@ import java.util.function.BiFunction;
 
 public class MatrixMultiplication {
 
-	private static final int NUMBER_THREADS = 1;
-	private static final int MATRIX_SIZE = 2000;
+	private static int NUM_OF_THREADS = 1;
+	private static final int MAX_THREADS = 2000;
+	private static final int MATRIX_SIZE = MAX_THREADS * MAX_THREADS;
 
 	public static void main(String[] args) {
-
 		// Generate two random matrices, same size
 		double[][] a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 		double[][] b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 
-		sequentialMultiplyMatrix(a, b);
-		parallelMultiplyMatrix(a, b);
+		System.out.println("Sequential Multiplication");
+		timer(MatrixMultiplication::sequentialMultiplyMatrix, a, b);
+
+		System.out.println("Parallel Multiplication");
+		for (int i=1; i<MAX_THREADS; i+= 100) {
+			System.out.print(i + "threads\t");
+			NUM_OF_THREADS = i;
+			timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
+		}
+
+		System.exit(0);
 	}
 
 	/**
@@ -71,7 +80,7 @@ public class MatrixMultiplication {
 
 		// instantiate an ExecutorService and a list of tasks to execute
 		final int numOfTasks = ROWS_A * COLS_B;
-		ExecutorService executor = Executors.newFixedThreadPool(NUMBER_THREADS);
+		ExecutorService executor = Executors.newFixedThreadPool(NUM_OF_THREADS);
 		ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(numOfTasks);
 
 		for (int r=0; r<ROWS_A; r++) {
@@ -142,7 +151,7 @@ public class MatrixMultiplication {
 		double[][] C = matrixMultiplier.apply(a, b);
 		long stopTime = System.nanoTime();
 
-        System.out.println("Execution took:\t" + (stopTime-startTime) + "ns");
+        System.out.print((stopTime-startTime) + "ns\n");
 
 		return C;
 	}
