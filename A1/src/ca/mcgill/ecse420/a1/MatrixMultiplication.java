@@ -55,8 +55,40 @@ public class MatrixMultiplication {
 	 * @return the result of the multiplication
 	 */
 	public static double[][] parallelMultiplyMatrix(double[][] a, double[][] b) {
-		//TODO
-		return null;
+		if (a[1].length != b.length) {
+			throw new InputMismatchException("Invalid matrix sizes to perform multiplication.");
+		}
+
+		final int ROWS_A = a.length;
+		final int COLS_A = a[0].length;
+		final int COLS_B = b[0].length;
+		final double[][] C = new double[ROWS_A][COLS_B];
+
+	// 	ExecutorService executor = Executors.newCachedThreadPool();
+
+	// 	for (int r=0; r<ROWS_A; r++) {
+	// 		for (int c=0; c<COLS_B; c++) {
+	// 			executor.execute(new Runnable() {
+
+	// 				public void run() {
+	// 					for (int k=0; k<COLS_A; k++) {
+	// 						C[r][c] += a[r][k] * b[k][c];
+	// 					}
+	// 				}
+	// 			});
+	// 		}
+	// 	}
+
+	// 	executor.shutdown();
+	// 	while (executor.isTerminated() == false) {
+	// 		try {
+	// 			Thread.sleep(50);
+	// 		} catch (InterruptedException e) {
+	// 			e.printStackTrace();
+	// 		}
+	// 	}
+
+		return C;
 	}
 
 	/**
