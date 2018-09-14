@@ -75,18 +75,18 @@ public class TestMatrixMultiplication {
             }
         );
 
-        long startTime = System.nanoTime();
+        System.out.println("\nSEQUENTIAL");
         for (TestCase tc : testCases) {
-            assertArrayEquals(tc.expected, MatrixMultiplication.sequentialMultiplyMatrix(tc.a, tc.b));
-        }
-        long stopTime = System.nanoTime();
-        System.out.println("Sequential execution took:\t" + (stopTime-startTime) + "ns");
+            assertArrayEquals(tc.expected, MatrixMultiplication.timer(
+                MatrixMultiplication::sequentialMultiplyMatrix, tc.a, tc.b)
+                );
+            }
 
-        startTime = System.nanoTime();
+        System.out.println("\nPARALLEL");
         for (TestCase tc : testCases) {
-            assertArrayEquals(tc.expected, MatrixMultiplication.parallelMultiplyMatrix(tc.a, tc.b));
+            assertArrayEquals(tc.expected, MatrixMultiplication.timer(
+                MatrixMultiplication::parallelMultiplyMatrix, tc.a, tc.b)
+            );
         }
-        stopTime = System.nanoTime();
-        System.out.println("Parallel execution took:\t" + (stopTime-startTime) + "ns");
     }
 }
