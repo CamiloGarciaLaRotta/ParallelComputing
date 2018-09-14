@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 
 public class MatrixMultiplication {
 
@@ -129,15 +130,21 @@ public class MatrixMultiplication {
 	}
 
 	/**
-	 * Prints the 2D matrix in grid form
-	 * @param matrix the 2D matrix to print
+	 * Wraps around matrix multiplication functions to time its execution
+	 * This function solves A1 1.3
+	 * @param matrixMultiplier the function that multiplies 2 matrices axb
+	 * @param a the first matrix
+	 * @param b the second matrix
+	 * @return the outcome of axb. The execution time is sent to stdout
 	 */
-	public static void printMatrix(double[][] matrix) {
-		for(int r=0; r<matrix.length; r++) {
-			for(int c=0; c<matrix[r].length; c++)
-				System.out.print(matrix[r][c] + " ");
-			System.out.println();
-		}
+	public static double[][] timer(BiFunction<double[][], double[][], double[][]> matrixMultiplier, double[][] a, double[][] b) {
+		long startTime = System.nanoTime();
+		double[][] C = matrixMultiplier.apply(a, b);
+		long stopTime = System.nanoTime();
+
+        System.out.println("Execution took:\t" + (stopTime-startTime) + "ns");
+
+		return C;
 	}
 
 	/**
