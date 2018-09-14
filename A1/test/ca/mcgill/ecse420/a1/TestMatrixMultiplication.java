@@ -16,11 +16,7 @@ public class TestMatrixMultiplication {
             this.b = b;
             this.expected = expected;
         }
-
-        public TestCase() {}
     }
-
-
 
     @Test
     public void testMatrixMultiplication() {
