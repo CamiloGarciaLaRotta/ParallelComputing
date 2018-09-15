@@ -12,8 +12,10 @@ import java.util.function.BiFunction;
 public class MatrixMultiplication {
 
 	private static int NUM_OF_THREADS = 1;
-	private static final int MAX_THREADS = 2000;
-	private static final int MATRIX_SIZE = MAX_THREADS * MAX_THREADS;
+	private static final int MATRIX_SIZE = 2000;
+	// Unecessary to go above MAX_THREADS
+	// it is the mathematical exact amount of dot products we will perform
+	private static final int MAX_THREADS = 801;
 
 	public static void main(String[] args) {
 		// Generate two random matrices, same size
@@ -24,8 +26,9 @@ public class MatrixMultiplication {
 		timer(MatrixMultiplication::sequentialMultiplyMatrix, a, b);
 
 		System.out.println("Parallel Multiplication");
-		for (int i=1; i<MAX_THREADS; i+= 100) {
-			System.out.print(i + "threads\t");
+		System.out.println("# Threads\t\tExecution Time");
+		for (int i=1; i<MAX_THREADS; i+= 10) {
+			System.out.print(i + " thread[s]\t");
 			NUM_OF_THREADS = i;
 			timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
 		}
