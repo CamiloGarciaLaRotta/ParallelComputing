@@ -19,8 +19,8 @@ public class MatrixMultiplication {
 
 	public static void main(String[] args) {
 		// Generate two random matrices, same size
-		double[][] a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
-		double[][] b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+		// double[][] a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+		// double[][] b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 
 		// System.out.println("Sequential Multiplication");
 		// System.out.println("Execution Time (ns)");
@@ -34,13 +34,25 @@ public class MatrixMultiplication {
 		// 	timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
 		// }
 
-		System.out.println("Matrix size\tExecution Time (ns)");
+		double[][] a, b;
 		int[] matrixSizes = {100, 200, 500, 1000, 2000, 4000};
+
+		System.out.println("Matrix size\tExecution Time (ns)");
 		for (int i=0; i<matrixSizes.length; i++) {
 			System.out.print(matrixSizes[i] +"\t\t");
 			MATRIX_SIZE = matrixSizes[i];
+			a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+			b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 			timer(MatrixMultiplication::sequentialMultiplyMatrix, a, b);
-			// timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
+		}
+
+		System.out.println("Matrix size\tExecution Time (ns)");
+		for (int i=0; i<matrixSizes.length; i++) {
+			System.out.print(matrixSizes[i] +"\t\t");
+			MATRIX_SIZE = matrixSizes[i];
+			a = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+			b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
+			timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
 		}
 
 		System.exit(0);
