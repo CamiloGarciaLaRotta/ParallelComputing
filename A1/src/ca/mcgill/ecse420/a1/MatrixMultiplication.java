@@ -23,11 +23,12 @@ public class MatrixMultiplication {
 		double[][] b = generateRandomMatrix(MATRIX_SIZE, MATRIX_SIZE);
 
 		System.out.println("Sequential Multiplication");
+		System.out.println("Execution Time (ns)");
 		timer(MatrixMultiplication::sequentialMultiplyMatrix, a, b);
 
 		System.out.println("Parallel Multiplication");
-		System.out.println("# Threads\tExecution Time");
-		for (int i=1; i<MAX_THREADS; i+= 5) {
+		System.out.println("# Threads\tExecution Time (ns)");
+		for (int i=1; i<MAX_THREADS; i++) {
 			System.out.print(i +"\t\t");
 			NUM_OF_THREADS = i;
 			timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
@@ -142,7 +143,7 @@ public class MatrixMultiplication {
 	}
 
 	/**
-	 * Wraps around matrix multiplication functions to time its execution
+	 * Wraps around matrix multiplication functions to time its execution in nanoseconds
 	 * This function solves A1 1.3
 	 * @param matrixMultiplier the function that multiplies 2 matrices axb
 	 * @param a the first matrix
@@ -154,7 +155,7 @@ public class MatrixMultiplication {
 		double[][] C = matrixMultiplier.apply(a, b);
 		long stopTime = System.nanoTime();
 
-        System.out.print((stopTime-startTime) + "ns\n");
+        System.out.println(stopTime-startTime);
 
 		return C;
 	}
