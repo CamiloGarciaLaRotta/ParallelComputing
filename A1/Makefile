@@ -1,9 +1,14 @@
-.PHONY: test run clean
-.DEFAULT_GOAL: run
+.PHONY: test run clean multiplication compile
+.DEFAULT_GOAL: test
 
-run:
-	mvn -q clean compile
+multiplication: compile
 	cd target/classes && java ca.mcgill.ecse420.a1.MatrixMultiplication
+
+deadlock: compile
+	cd target/classes && java ca.mcgill.ecse420.a1.Deadlock
+
+compile:
+	mvn -q clean compile
 
 clean:
 	mvn -q clean
