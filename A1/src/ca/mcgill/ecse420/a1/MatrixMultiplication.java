@@ -26,20 +26,21 @@ public class MatrixMultiplication {
 		// System.out.println("Execution Time (ns)");
 		// timer(MatrixMultiplication::sequentialMultiplyMatrix, a, b);
 
-		System.out.println("Parallel Multiplication");
+		// System.out.println("Parallel Multiplication");
 		// System.out.println("# Threads\tExecution Time (ns)");
 		// for (int i=1; i<MAX_THREADS; i+=100) {
-			// 	System.out.print(i +"\t\t");
-			// 	NUM_OF_THREADS = i;
-			// 	timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
-			// }
+		// 	System.out.print(i +"\t\t");
+		// 	NUM_OF_THREADS = i;
+		// 	timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
+		// }
 
 		System.out.println("Matrix size\tExecution Time (ns)");
 		int[] matrixSizes = {100, 200, 500, 1000, 2000, 4000};
 		for (int i=0; i<matrixSizes.length; i++) {
 			System.out.print(matrixSizes[i] +"\t\t");
 			MATRIX_SIZE = matrixSizes[i];
-			timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
+			timer(MatrixMultiplication::sequentialMultiplyMatrix, a, b);
+			// timer(MatrixMultiplication::parallelMultiplyMatrix, a, b);
 		}
 
 		System.exit(0);
