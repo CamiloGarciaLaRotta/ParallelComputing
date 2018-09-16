@@ -4,29 +4,29 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class DiningPhilosophers {
 
 	public static void main(String[] args) {
 		int numberOfPhilosophers = 5;
-        Philosopher[] philosophers = new Philosopher[numberOfPhilosophers];
+        // Philosopher[] philosophers = new Philosopher[numberOfPhilosophers];
 		Object[] chopsticks = new Object[numberOfPhilosophers];
 
 		ExecutorService executor = Executors.newFixedThreadPool(numberOfPhilosophers);
 		ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(numberOfPhilosophers);
 
 		for (int i=0; i<numberOfPhilosophers; i++) {
+			chopsticks[i] = new Object();
 			Object leftChopstick = chopsticks[i];
-            Object rightchoptsick = chopsticks[(i + 1) % chopsticks.length];
-			tasks.add(Executors.callable(new Philosopher(i, leftChopstick, rightchoptsick)));
+            Object rightChoptsick = chopsticks[(i + 1) % chopsticks.length];
+			tasks.add(Executors.callable(new Philosopher(i, leftChopstick, rightChoptsick)));
 		}
 
 		try {
 			executor.invokeAll(tasks);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+			executor.shutdown();
 			handleShutdown();
 		}
 	}
@@ -34,12 +34,13 @@ public class DiningPhilosophers {
 	public static class Philosopher implements Runnable {
 
 		private int philosopherNumber;
-		private Object leftChopstick, rightChopstick;
+		private Object leftChopstick;
+		private Object rightChopstick;
 
-		public Philosopher(int philosopherNumber, Object leftchopstick, Object rightChopstick) {
+		public Philosopher(int philosopherNumber, Object leftChopstick, Object rightChopstick) {
 			this.philosopherNumber = philosopherNumber;
-			this.leftChopstick = this.leftChopstick;
-			this.rightChopstick = this.rightChopstick;
+			this.leftChopstick = leftChopstick;
+			this.rightChopstick = rightChopstick;
 		}
 
 		private void randomDelay(float min, float max){
@@ -48,21 +49,19 @@ public class DiningPhilosophers {
 				Thread.sleep(random * 1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
+				handleShutdown();
 			}
 		}
-
 
 		@Override
 		public void run() {
 			while(true) {
-				//think
 				System.out.println("Philo #" + philosopherNumber + " is thinking");
-				randomDelay(0, 5);
+				randomDelay(0, 2);
 
-				//eat
-				synchronized(leftChopstick) {
+				synchronized (leftChopstick) {
 					System.out.println("Philo #" + philosopherNumber + " grabed left chopstick");
-					synchronized(rightChopstick) {
+					synchronized (rightChopstick) {
 						System.out.println("Philo #" + philosopherNumber + " grabed right chopstick");
 						System.out.println("Philo #" + philosopherNumber + " is eating");
 						randomDelay(0, 2);
