@@ -17,6 +17,8 @@ public class DiningPhilosophers {
 
 		for (int i=0; i<numberOfPhilosophers; i++) {
 			chopsticks[i] = new Object();
+		}
+		for (int i=0; i<numberOfPhilosophers; i++) {
 			Object leftChopstick = chopsticks[i];
             Object rightChoptsick = chopsticks[(i + 1) % chopsticks.length];
 			tasks.add(Executors.callable(new Philosopher(i, leftChopstick, rightChoptsick)));
