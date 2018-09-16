@@ -9,7 +9,6 @@ public class DiningPhilosophers {
 
 	public static void main(String[] args) {
 		int numberOfPhilosophers = 5;
-        // Philosopher[] philosophers = new Philosopher[numberOfPhilosophers];
 		Object[] chopsticks = new Object[numberOfPhilosophers];
 
 		ExecutorService executor = Executors.newFixedThreadPool(numberOfPhilosophers);
@@ -18,6 +17,7 @@ public class DiningPhilosophers {
 		for (int i=0; i<numberOfPhilosophers; i++) {
 			chopsticks[i] = new Object();
 		}
+
 		for (int i=0; i<numberOfPhilosophers; i++) {
 			Object leftChopstick = chopsticks[i];
             Object rightChoptsick = chopsticks[(i + 1) % chopsticks.length];
@@ -36,23 +36,12 @@ public class DiningPhilosophers {
 	public static class Philosopher implements Runnable {
 
 		private int philosopherNumber;
-		private Object leftChopstick;
-		private Object rightChopstick;
+		private Object leftChopstick, rightChopstick;
 
 		public Philosopher(int philosopherNumber, Object leftChopstick, Object rightChopstick) {
 			this.philosopherNumber = philosopherNumber;
 			this.leftChopstick = leftChopstick;
 			this.rightChopstick = rightChopstick;
-		}
-
-		private void randomDelay(float min, float max){
-			int random = (int)(max * Math.random() + min);
-			try {
-				Thread.sleep(random * 1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				handleShutdown();
-			}
 		}
 
 		@Override
@@ -71,6 +60,16 @@ public class DiningPhilosophers {
 					System.out.println("Philo #" + philosopherNumber + " released right chopstick");
 				}
 				System.out.println("Philo #" + philosopherNumber + " released left chopstick");
+			}
+		}
+
+		private void randomDelay(float min, float max){
+			int random = (int)(max * Math.random() + min);
+			try {
+				Thread.sleep(random * 1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				handleShutdown();
 			}
 		}
 	}
