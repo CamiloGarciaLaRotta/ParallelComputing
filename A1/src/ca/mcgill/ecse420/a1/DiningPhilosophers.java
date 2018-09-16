@@ -20,8 +20,17 @@ public class DiningPhilosophers {
 
 		for (int i=0; i<numberOfPhilosophers; i++) {
 			Object leftChopstick = chopsticks[i];
-            Object rightChoptsick = chopsticks[(i + 1) % chopsticks.length];
-			tasks.add(Executors.callable(new Philosopher(i, leftChopstick, rightChoptsick)));
+			Object rightChoptsick = chopsticks[(i + 1) % chopsticks.length];
+
+			// code for Q3.2
+			if (i == numberOfPhilosophers - 1) {
+				tasks.add(Executors.callable(new Philosopher(i, rightChoptsick, leftChopstick)));
+			} else {
+				tasks.add(Executors.callable(new Philosopher(i, leftChopstick, rightChoptsick)));
+			}
+
+			// code for Q3.1
+			// tasks.add(Executors.callable(new Philosopher(i, leftChopstick, rightChoptsick)));
 		}
 
 		try {
