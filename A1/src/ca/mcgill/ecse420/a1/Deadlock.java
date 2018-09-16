@@ -14,24 +14,14 @@ public class Deadlock {
         class WashWindowsTask implements Runnable {
             @Override
             public void run() {
-                try {
-                    Thread.sleep((long) (Math.random() * 100));
-                } catch (InterruptedException e) {
-                    handleShutdown();
-                }
+
+                randomDelay(0, 2);
                 synchronized(soapDispenser) {
-                    try {
-                        Thread.sleep((long) (Math.random() * 100));
-                    } catch (InterruptedException e) {
-                        handleShutdown();
-                    }
+                    randomDelay(0, 2);
                     System.out.println("WINDOW WASHER:\tObtaining soap");
+
                     synchronized(spongeDispenser) {
-                        try {
-                            Thread.sleep((long) (Math.random() * 100));
-                        } catch (InterruptedException e) {
-                            handleShutdown();
-                        }
+                        randomDelay(0, 2);
                         System.out.println("WINDOW WASHER:\tObtaining sponge");
                         System.out.println("WINDOW WASHER:\tWashing windows");
                     }
@@ -39,35 +29,44 @@ public class Deadlock {
                 }
                 System.out.println("WINDOW WASHER:\tReleasing soap");
             }
+
+            private void randomDelay(float min, float max){
+                int random = (int)(max * Math.random() + min);
+                try {
+                    Thread.sleep(random * 1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         class WashFloorTask implements Runnable {
+
             @Override
             public void run() {
-                try {
-                    Thread.sleep((long) (Math.random() * 100));
-                } catch (InterruptedException e) {
-                    handleShutdown();
-                }
+
+                randomDelay(0, 2);
                 synchronized(spongeDispenser) {
-                    try {
-                        Thread.sleep((long) (Math.random() * 100));
-                    } catch (InterruptedException e) {
-                        handleShutdown();
-                    }
+                    randomDelay(0, 2);
                     System.out.println("FLOOR WASHER:\tObtaining sponge");
+
                     synchronized(soapDispenser) {
-                        try {
-                            Thread.sleep((long) (Math.random() * 100));
-                        } catch (InterruptedException e) {
-                            handleShutdown();
-                        }
+                        randomDelay(0, 2);
                         System.out.println("FLOOR WASHER:\tObtaining soap");
                         System.out.println("FLOOR WASHER:\tWashing floor");
                     }
                     System.out.println("FLOOR WASHER:\tReleasing soap");
                 }
                 System.out.println("FLOOR WASHER:\tReleasing sponge");
+            }
+
+            private void randomDelay(float min, float max){
+                int random = (int)(max * Math.random() + min);
+                try {
+                    Thread.sleep(random * 1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
