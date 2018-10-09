@@ -7,8 +7,14 @@ multiplication: compile
 deadlock: compile
 	cd target/classes && java ca.mcgill.ecse420.a1.Deadlock
 
-philosophers: compile
-	cd target/classes && java ca.mcgill.ecse420.a1.DiningPhilosophers
+philosophersDeadlock: compile
+	cd target/classes && java ca.mcgill.ecse420.a1.DiningPhilosophersDeadlock
+
+philosophersDeadlockFree: compile
+	cd target/classes && java ca.mcgill.ecse420.a1.DiningPhilosophersDeadlockFree
+
+philosophersFair: compile
+	cd target/classes && java ca.mcgill.ecse420.a1.DiningPhilosophersFair
 
 compile:
 	mvn -q clean compile
