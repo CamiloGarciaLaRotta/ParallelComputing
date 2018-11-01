@@ -1,11 +1,8 @@
 .PHONY: test clean compile
 .DEFAULT_GOAL: test
 
-filter: compile
-	cd target/classes && java ca.mcgill.ecse420.a2.FilterLock
-
-bakery: compile
-	cd target/classes && java ca.mcgill.ecse420.a2.BakeryLock
+mutex: compile
+	cd target/classes && java ca.mcgill.ecse420.a2.MutexValidator
 
 compile:
 	mvn -q clean compile
