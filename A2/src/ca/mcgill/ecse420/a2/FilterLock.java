@@ -17,7 +17,7 @@ class FilterLock implements Lock {
 
   @Override
   public void lock() {
-    int me = (int) Thread.currentThread().getId();
+    int me = (int) Thread.currentThread().getId() % numThreads;
     for (int L=1; L<numThreads; L++) {
       level[me] = L;
       victim[L] = me;
@@ -30,7 +30,7 @@ class FilterLock implements Lock {
 
   @Override
   public void unlock() {
-    int me = (int) Thread.currentThread().getId();
+    int me = (int) Thread.currentThread().getId() % numThreads;
     level[me] = 0;
   }
 
