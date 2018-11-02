@@ -29,19 +29,18 @@ public class MutexValidator {
     ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(numThreads);
     counter = 0;
 
-    for (int i=0; i<numThreads; i++) {
+    for (int i = 0; i < numThreads; i++) {
       tasks.add(Executors.callable(new Task(lockType)));
     }
 
     try {
       // executor.invokeAll(tasks);
       List<Future<Object>> futures = executor.invokeAll(tasks);
-      for(Future<Object> future : futures){
+      for (Future<Object> future : futures) {
         System.out.print("Thread ended with status: ");
-        try{
+        try {
           future.get();
-        }
-        catch (CancellationException ce) {
+        } catch (CancellationException ce) {
           System.out.println("cancelled");
           continue;
         } catch (ExecutionException ee) {
@@ -67,31 +66,32 @@ public class MutexValidator {
 
   public static class Task implements Runnable {
 
-    Lock lockUnderTest, rangeLock;
+    static Lock lockUnderTest, rangeLock;
 
     public Task(Object lockType) {
       rangeLock = new ReentrantLock();
       if (lockType.equals(FilterLock.class)) {
-        this.lockUnderTest = new FilterLock(numThreads);
+        Task.lockUnderTest = new FilterLock(numThreads);
       } else {
-        this.lockUnderTest = new BakeryLock(numThreads);
+        Task.lockUnderTest = new BakeryLock(numThreads);
       }
     }
 
     @Override
     public void run() {
       long t0, t1;
-      for (int i=0; i<numIterations; i++) {
+      for (int i = 0; i < numIterations; i++) {
 
         randomDelay(0, 1);
-        // uncomment rangeLock and comment lockUnderTest to "test" the official java lock
-        // lockUnderTest.lock();
-        rangeLock.lock();
+        // uncomment rangeLock and comment lockUnderTest to "test" the official java
+        // lock
+        lockUnderTest.lock();
+        // rangeLock.lock();
         t0 = System.currentTimeMillis();
         counter++;
         randomDelay(0, 1);
-        // lockUnderTest.unlock();
-        rangeLock.unlock();
+        lockUnderTest.unlock();
+        // rangeLock.unlock();
         t1 = System.currentTimeMillis();
       }
     }
