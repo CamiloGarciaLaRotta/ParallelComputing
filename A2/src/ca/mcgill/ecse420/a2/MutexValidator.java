@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class MutexValidator {
 
@@ -18,6 +17,7 @@ public class MutexValidator {
   static final int numIterations = 100;
 
   public static void main(String[] args) {
+    System.out.println("\nThreads: " + numThreads + "\tIterations for each thread: " + numIterations + "\n");
     System.out.println("Filter lock implements mutual exclusivity: " + isValidMutex(FilterLock.class) + "\n");
     System.out.println("Bakery lock implements mutual exclusivity: " + isValidMutex(BakeryLock.class) + "\n");
     System.exit(0);
@@ -34,7 +34,6 @@ public class MutexValidator {
     }
 
     try {
-      // executor.invokeAll(tasks);
       List<Future<Object>> futures = executor.invokeAll(tasks);
       for (Future<Object> future : futures) {
         System.out.print("Thread ended with status: ");
@@ -66,10 +65,9 @@ public class MutexValidator {
 
   public static class Task implements Runnable {
 
-    static Lock lockUnderTest, rangeLock;
+    static Lock lockUnderTest;
 
     public Task(Object lockType) {
-      rangeLock = new ReentrantLock();
       if (lockType.equals(FilterLock.class)) {
         Task.lockUnderTest = new FilterLock(numThreads);
       } else {
@@ -79,20 +77,12 @@ public class MutexValidator {
 
     @Override
     public void run() {
-      long t0, t1;
       for (int i = 0; i < numIterations; i++) {
-
         randomDelay(0, 1);
-        // uncomment rangeLock and comment lockUnderTest to "test" the official java
-        // lock
         lockUnderTest.lock();
-        // rangeLock.lock();
-        t0 = System.currentTimeMillis();
         counter++;
         randomDelay(0, 1);
         lockUnderTest.unlock();
-        // rangeLock.unlock();
-        t1 = System.currentTimeMillis();
       }
     }
 

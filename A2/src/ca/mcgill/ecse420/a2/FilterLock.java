@@ -7,7 +7,7 @@ import java.util.concurrent.locks.Lock;
 class FilterLock implements Lock {
 
   int numThreads;
-  private int[] level, victim;
+  static int[] level, victim;
 
   public FilterLock(int numThreads) {
     this.numThreads = numThreads;
@@ -18,12 +18,20 @@ class FilterLock implements Lock {
   @Override
   public void lock() {
     int me = (int) Thread.currentThread().getId() % numThreads;
+    boolean spin;
     for (int L=1; L<numThreads; L++) {
       level[me] = L;
       victim[L] = me;
 
-      for (int k=0; k<numThreads; k++) {
-        while (k != me && level[k] >= level[me] && victim[L] == me) {}
+      spin = true;
+      while (spin) {
+        spin = false;
+        for (int k=0; k<numThreads; k++) {
+          if (k != me && level[k] >= level[me] && victim[L] == me) {
+            spin = true;
+            break;
+          }
+        }
       }
     }
   }

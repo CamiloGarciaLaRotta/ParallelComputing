@@ -3,28 +3,35 @@ package ca.mcgill.ecse420.a2;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 class BakeryLock implements Lock {
 
-  private int numThreads;
-  private boolean[] flag;
-  private int[] label;
+  static private int numThreads;
+  static public boolean[] flag;
+  static public int[] label;
+  static private Lock lock;
 
 
-  public BakeryLock(int numThreads) {
-    this.numThreads = numThreads;
-    this.flag = new boolean[numThreads];
-    this.label = new int[numThreads];
+  public BakeryLock(int numThr) {
+    numThreads = numThr;
+    flag = new boolean[numThreads];
+    label = new int[numThreads];
+    lock = new ReentrantLock();
   }
 
   @Override
   public void lock() {
     int me = (int) Thread.currentThread().getId() % numThreads;
+
     flag[me] = true;
+
+    lock.lock();
     label[me] = getMax(label) + 1;
+    lock.unlock();
 
     for (int k=0; k<numThreads; k++) {
-      while (k != me && flag[k] && label[me] > label[k] && me > k) {}
+      while (k != me && flag[k] && ((label[k] < label[me]) || ((label[k] == label[me]) && k < me))) {}
     }
   }
 
