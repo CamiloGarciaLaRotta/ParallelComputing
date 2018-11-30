@@ -5,7 +5,14 @@ import java.util.concurrent.locks.ReentrantLock;
 
 class ConcurrentQueue<T> {
     Node head;
+    Node tail;
 
+    public ConcurrentQueue()
+    {
+        head = new Node(Integer.MIN_VALUE);
+        tail = new Node(Integer.MAX_VALUE);
+        head.next = tail;
+    }
     public boolean add(T item) {
         int key = item.hashCode();
         while (true) {
@@ -102,6 +109,12 @@ class ConcurrentQueue<T> {
         T item;
         int key;
         volatile Node next;
+        
+        public Node(int key)
+        {
+            item = null;
+            this.key = key;
+        }
 
         public Node(T item) {
             this.item = item;

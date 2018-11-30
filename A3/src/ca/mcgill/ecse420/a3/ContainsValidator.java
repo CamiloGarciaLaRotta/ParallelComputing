@@ -10,21 +10,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ContainsValidator {
 
   static int counter;
-  static Lock addListLock = new ReentrantLock();
-  static HashSet<Integer> mapOfAdded = new HashSet<>();
+  static Lock addListLock = new ReentrantLock(); 
 
-  static final int numThreads = 4;
+  static final int numThreads = 2;
   static final int numIterations = 50;
   static final int MAX_NUM = 5000;
-  static boolean result = false;
-  volatile static ConcurrentQueue<Integer> queue = new ConcurrentQueue<Integer>();
+  
+  static boolean result = true;
 
   public static void main(String[] args) {
     if (VerifyContains()) {
@@ -42,9 +40,9 @@ public class ContainsValidator {
     counter = 0;
 
     for (int i = 0; i < numThreads - 1; i++) {
-      tasks.add(Executors.callable(new ModifierTask()));
+      tasks.add(Executors.callable(new ModifierTask(false)));
     }
-    tasks.add(Executors.callable(new Task()));
+    tasks.add(Executors.callable(new ModifierTask(true)));
 
     try {
       List<Future<Object>> futures = executor.invokeAll(tasks);
@@ -71,79 +69,70 @@ public class ContainsValidator {
       System.exit(0);
     }
 
-    // Check queue state at the end
-    // System.out.println("Final Counter value: " + counter);
-
     return result;
   }
 
   public static class ModifierTask implements Runnable {
-    public ModifierTask() {
+    static Lock _lock = new ReentrantLock();
+    static HashSet<Integer> mapOfAdded = new HashSet<Integer>();
+    boolean isValidator = false;
+    static ConcurrentQueue<Integer> queue = new ConcurrentQueue<Integer>();
 
-    }
-
-    public void run() {
-      for (int i = 0; i < numIterations; i++) {
-        try {
-          addListLock.lock();
-          double rng = Math.random();
-
-          if (Math.random() < 0.5) {
-            int numToAdd = (int) (rng * MAX_NUM);
-            System.out.println("Adding " + numToAdd);
-            if (!mapOfAdded.contains(numToAdd)) {
-              mapOfAdded.add(numToAdd);
-              queue.add(numToAdd);
-            }
-          } else {
-            Object[] numsAdded = mapOfAdded.toArray();
-            System.out.println("Removing " + (Integer) numsAdded[(int) (rng * numsAdded.length)]);
-            Integer numToRemove = (Integer) numsAdded[(int) (rng * numsAdded.length)];
-
-            mapOfAdded.remove(numToRemove);
-            queue.remove(numToRemove);
-          }
-        } finally {
-          addListLock.unlock();
-        }
-        randomDelay(0, 2.0f);
-      }
-    }
-  }
-
-  public static class Task implements Runnable {
-
-    static Lock lockUnderTest;
-
-    public Task() {
-      // Constructor
+    public ModifierTask(boolean validator) {
+      isValidator = validator;
+      
     }
 
     @Override
     public void run() {
       for (int i = 0; i < numIterations; i++) {
+        _lock.lock();
         try {
-          addListLock.lock();
-          Object[] numsAdded = mapOfAdded.toArray();
-          result = result && queue.contains((Integer) numsAdded[(int) (Math.random() * numsAdded.length)]);
-          System.out.println("Checking " + (Integer) numsAdded[(int) (Math.random() * numsAdded.length)]);
+          if (isValidator && mapOfAdded.size() > 0) {
+            Object[] numsAdded = mapOfAdded.toArray();
+            int index = (int)Math.floor(Math.random() * numsAdded.length);
+            Integer value = (Integer) numsAdded[index];
+            boolean localResult = queue.contains(value);
+            result = result && localResult;
+            System.out.println("Checking ..." + localResult);
+          } else {
+            double rng = Math.random();
+            if (Math.random() < 0.5 || mapOfAdded.size() == 0) {
+              int numToAdd = (int) (rng * MAX_NUM);
+              System.out.println("Adding " + numToAdd);
+
+              if (!mapOfAdded.contains(new Integer(numToAdd))) {
+                mapOfAdded.add(numToAdd);
+                queue.add(numToAdd);
+              }
+            } else {
+              System.out.println("trying to remove");
+              Object[] numsAdded = mapOfAdded.toArray();
+              int index = (int)Math.floor(rng * numsAdded.length);
+              Integer value = (Integer) numsAdded[index];
+              System.out.println("Removing " + value);
+
+              mapOfAdded.remove(value);
+              queue.remove(value);
+            }
+          }
 
         } finally {
-          addListLock.unlock();
+          _lock.unlock();
         }
-
         randomDelay(0, 2.0f);
+      }
+    }
+
+    public static void randomDelay(float min, float max) {
+      int random = (int) (max * Math.random() + min);
+      try {
+        Thread.sleep(random * 1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+        System.exit(0);
       }
     }
   }
 
-  public static void randomDelay(float min, float max) {
-    int random = (int) (max * Math.random() + min);
-    try {
-      Thread.sleep(random * 1000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-      System.exit(0);
-    }
-  }
 }
