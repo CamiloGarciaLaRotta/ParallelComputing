@@ -1,6 +1,5 @@
 package ca.mcgill.ecse420.a3;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,12 +15,14 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ContainsValidator {
 
   static int counter;
-  static Lock addListLock = new ReentrantLock(); 
+  static Lock addListLock = new ReentrantLock();
+  static HashSet<Integer> mapOfAdded = new HashSet<Integer>();
+  static ConcurrentQueue<Integer> queue = new ConcurrentQueue<Integer>();
 
   static final int numThreads = 2;
   static final int numIterations = 50;
   static final int MAX_NUM = 5000;
-  
+
   static boolean result = true;
 
   public static void main(String[] args) {
@@ -40,9 +41,9 @@ public class ContainsValidator {
     counter = 0;
 
     for (int i = 0; i < numThreads - 1; i++) {
-      tasks.add(Executors.callable(new ModifierTask(false)));
+      tasks.add(Executors.callable(new ModifierTask()));
     }
-    tasks.add(Executors.callable(new ModifierTask(true)));
+    tasks.add(Executors.callable(new ValidationClass()));
 
     try {
       List<Future<Object>> futures = executor.invokeAll(tasks);
@@ -73,65 +74,79 @@ public class ContainsValidator {
   }
 
   public static class ModifierTask implements Runnable {
-    static Lock _lock = new ReentrantLock();
-    static HashSet<Integer> mapOfAdded = new HashSet<Integer>();
-    boolean isValidator = false;
-    static ConcurrentQueue<Integer> queue = new ConcurrentQueue<Integer>();
-
-    public ModifierTask(boolean validator) {
-      isValidator = validator;
-      
+    static final float  ADD_THRESHOLD = 0.65f;
+    public ModifierTask() {
     }
 
     @Override
     public void run() {
       for (int i = 0; i < numIterations; i++) {
-        _lock.lock();
+        addListLock.lock();
+        double rng = Math.random();
         try {
-          if (isValidator && mapOfAdded.size() > 0) {
-            Object[] numsAdded = mapOfAdded.toArray();
-            int index = (int)Math.floor(Math.random() * numsAdded.length);
-            Integer value = (Integer) numsAdded[index];
-            boolean localResult = queue.contains(value);
-            result = result && localResult;
-            System.out.println("Checking ..." + localResult);
-          } else {
-            double rng = Math.random();
-            if (Math.random() < 0.5 || mapOfAdded.size() == 0) {
-              int numToAdd = (int) (rng * MAX_NUM);
-              System.out.println("Adding " + numToAdd);
+          if (rng < ADD_THRESHOLD) {
+            // Remap random variable, avoids recalculating it
+            rng = rng / ADD_THRESHOLD;
+            int numToAdd = (int) (rng * MAX_NUM);
 
-              if (!mapOfAdded.contains(new Integer(numToAdd))) {
-                mapOfAdded.add(numToAdd);
-                queue.add(numToAdd);
-              }
-            } else {
-              System.out.println("trying to remove");
-              Object[] numsAdded = mapOfAdded.toArray();
-              int index = (int)Math.floor(rng * numsAdded.length);
-              Integer value = (Integer) numsAdded[index];
-              System.out.println("Removing " + value);
+            mapOfAdded.add(numToAdd);
+            queue.add(numToAdd);
 
-              mapOfAdded.remove(value);
-              queue.remove(value);
-            }
+            System.out.println("Adding " + numToAdd);
+
+          } else if (mapOfAdded.size() > 0) {
+            // Remap random variable, avoids recalculating it
+            rng = (rng - ADD_THRESHOLD) / ADD_THRESHOLD;
+
+            int index = (int) Math.floor(rng * mapOfAdded.size());
+            Integer value = (Integer) mapOfAdded.toArray()[index];
+
+            mapOfAdded.remove(value);
+            queue.remove(value);
+
+            System.out.println("Removing " + value);
           }
-
         } finally {
-          _lock.unlock();
+          addListLock.unlock();
         }
-        randomDelay(0, 2.0f);
+        randomDelay(0.f, 2.0f);
       }
     }
+  }
 
-    public static void randomDelay(float min, float max) {
-      int random = (int) (max * Math.random() + min);
-      try {
-        Thread.sleep(random * 1000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-        System.exit(0);
+  static class ValidationClass implements Runnable {
+
+    @Override
+    public void run() {
+      for (int i = 0; i < numIterations * 0.5; i++) {
+        addListLock.lock();
+        try {
+          if (mapOfAdded.size() > 0) {
+            int index = (int) Math.floor(Math.random() * mapOfAdded.size());
+            Integer value = (Integer) mapOfAdded.toArray()[index];
+            if (queue.contains(value)) {
+              result = result && true;
+              System.out.println("Checking ..." + value + " true");
+            } else {
+              result = false;
+              System.out.println("Checking ..." + value + " false");
+            }
+          }
+        } finally {
+          addListLock.unlock();
+        }
+        randomDelay(1.0f, 1.5f);
       }
+    }
+  }
+
+  public static void randomDelay(float min, float max) {
+    int random = (int) (max * Math.random() + min);
+    try {
+      Thread.sleep(random * 1000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      System.exit(0);
     }
   }
 
