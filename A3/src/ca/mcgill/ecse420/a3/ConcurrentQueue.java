@@ -7,90 +7,88 @@ class ConcurrentQueue<T> {
     Node head;
     Node tail;
 
-    public ConcurrentQueue()
-    {
+    public ConcurrentQueue() {
         head = new Node(Integer.MIN_VALUE);
         tail = new Node(Integer.MAX_VALUE);
         head.next = tail;
     }
+
     public boolean add(T item) {
         int key = item.hashCode();
-        while (true) {
-            Node pred = head;
+        head.lock();
+        Node pred = head;
+        try {
             Node curr = pred.next;
-            while (curr.key <= key) {
-                pred = curr;
-                curr = curr.next;
-            }
-            pred.lock();
             curr.lock();
             try {
-                if (validate(pred, curr)) {
-                    if (curr.key == key) {
-                        return false;
-                    } else {
-                        Node node = new Node(item);
-                        node.next = curr;
-                        pred.next = node;
-                        return true;
-                    }
+                while (curr.key < key) {
+                    pred.unlock();
+                    pred = curr;
+                    curr = curr.next;
+                    curr.lock();
                 }
+                if (curr.key == key) {
+                    return false;
+                }
+                Node newNode = new Node(item);
+                newNode.next = curr;
+                pred.next = newNode;
+                return true;
             } finally {
-                pred.unlock();
                 curr.unlock();
             }
+        } finally {
+            pred.unlock();
         }
     }
 
     public boolean remove(T item) {
         int key = item.hashCode();
-        while (true) {
-            Node pred = head;
+        head.lock();
+        Node pred = head;
+        try {
             Node curr = pred.next;
-            while (curr.key < key) {
-                pred = curr;
-                curr = curr.next;
-            }
-            pred.lock();
             curr.lock();
             try {
-                if (validate(pred, curr)) {
-                    if (curr.key == key) {
-                        pred.next = curr.next;
-                        return true;
-                    } else {
-                        return false;
-                    }
+                while (curr.key < key) {
+                    pred.unlock();
+                    pred = curr;
+                    curr = curr.next;
+                    curr.lock();
                 }
+                if (curr.key == key) {
+                    pred.next = curr.next;
+                    return true;
+                }
+                return false;
             } finally {
-                pred.unlock();
                 curr.unlock();
             }
+        } finally {
+            pred.unlock();
         }
     }
 
     public boolean contains(T item) {
         int key = item.hashCode();
-        while (true) {
-            // Search for key
-            Node pred = this.head;
+        head.lock();
+        Node pred = head;
+        try {
             Node curr = pred.next;
-            while (curr.key < key) {
-                pred = curr;
-                curr = curr.next;
-            }
+            curr.lock();
             try {
-                pred.lock();
-                curr.lock();
-                // Validate that conditions still hold
-                if (validate(pred, curr)) {
-                    // Return whether it's contained
-                    return (curr.key == key);
+                while (curr.key < key) {
+                    pred.unlock();
+                    pred = curr;
+                    curr = curr.next;
+                    curr.lock();
                 }
+                return curr.key == key;
             } finally {
-                pred.unlock();
                 curr.unlock();
             }
+        } finally {
+            pred.unlock();
         }
     }
 
@@ -109,9 +107,8 @@ class ConcurrentQueue<T> {
         T item;
         int key;
         volatile Node next;
-        
-        public Node(int key)
-        {
+
+        public Node(int key) {
             item = null;
             this.key = key;
         }
