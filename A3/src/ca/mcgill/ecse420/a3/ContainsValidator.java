@@ -17,6 +17,7 @@ public class ContainsValidator {
   static int counter;
   static Lock addListLock = new ReentrantLock();
   static HashSet<Integer> mapOfAdded = new HashSet<Integer>();
+  static HashSet<Integer> mapOfRemoved = new HashSet<Integer>();
   static ConcurrentQueue<Integer> queue = new ConcurrentQueue<Integer>();
 
   static final int numThreads = 2;
@@ -26,7 +27,8 @@ public class ContainsValidator {
   static boolean result = true;
 
   public static void main(String[] args) {
-    if (VerifyContains()) {
+    boolean result;
+    if (Verify(false) && Verify(true)) {
       System.out.println("Contains worked!");
     } else {
       System.out.println("Contains does not work.");
@@ -34,16 +36,16 @@ public class ContainsValidator {
     System.exit(0);
   }
 
-  private static boolean VerifyContains() {
+  private static boolean Verify(boolean remove) {
 
     ExecutorService executor = Executors.newFixedThreadPool(numThreads);
     ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(numThreads);
     counter = 0;
 
     for (int i = 0; i < numThreads - 1; i++) {
-      tasks.add(Executors.callable(new ModifierTask()));
+      tasks.add(Executors.callable(remove ? new RemoveTask() : new AddTask()));
     }
-    tasks.add(Executors.callable(new ValidationClass()));
+    tasks.add(Executors.callable(new ValidationClass(remove)));
 
     try {
       List<Future<Object>> futures = executor.invokeAll(tasks);
@@ -73,69 +75,100 @@ public class ContainsValidator {
     return result;
   }
 
-  public static class ModifierTask implements Runnable {
-    static final float  ADD_THRESHOLD = 0.65f;
-    public ModifierTask() {
+  public static class RemoveTask implements Runnable {
+    public RemoveTask() {
     }
 
     @Override
     public void run() {
       for (int i = 0; i < numIterations; i++) {
-        addListLock.lock();
+        double rng = Math.random();
+        if (mapOfAdded.size() > 0) {
+          int index = (int) Math.floor(rng * mapOfAdded.size());
+          Integer value = (Integer) mapOfAdded.toArray()[index];
+
+          queue.remove(value);
+
+          addListLock.lock();
+          mapOfAdded.remove(value);
+          mapOfRemoved.add(value);
+          addListLock.unlock();
+
+          System.out.println("Removing " + value);
+        }
+
+        randomDelay(0.5f, 2.0f);
+      }
+    }
+  }
+
+  public static class AddTask implements Runnable {
+    public AddTask() {
+    }
+
+    @Override
+    public void run() {
+      for (int i = 0; i < numIterations; i++) {
         double rng = Math.random();
         try {
-          if (rng < ADD_THRESHOLD) {
-            // Remap random variable, avoids recalculating it
-            rng = rng / ADD_THRESHOLD;
-            int numToAdd = (int) (rng * MAX_NUM);
-
-            mapOfAdded.add(numToAdd);
-            queue.add(numToAdd);
-
-            System.out.println("Adding " + numToAdd);
-
-          } else if (mapOfAdded.size() > 0) {
-            // Remap random variable, avoids recalculating it
-            rng = (rng - ADD_THRESHOLD) / ADD_THRESHOLD;
-
-            int index = (int) Math.floor(rng * mapOfAdded.size());
-            Integer value = (Integer) mapOfAdded.toArray()[index];
-
-            mapOfAdded.remove(value);
-            queue.remove(value);
-
-            System.out.println("Removing " + value);
-          }
-        } finally {
+          // Remap random variable, avoids recalculating it
+          int numToAdd = (int) (rng * MAX_NUM);
+          queue.add(numToAdd);
+          addListLock.lock();
+          mapOfAdded.add(numToAdd);
           addListLock.unlock();
+          System.out.println("Adding " + numToAdd);
+        } finally {
+          // Unlock just in case there was an exception when adding to the map
         }
-        randomDelay(0.f, 2.0f);
+        randomDelay(0.5f, 2.0f);
       }
     }
   }
 
   static class ValidationClass implements Runnable {
+    public boolean checkRemove = false;
+
+    public ValidationClass(boolean remove)
+    {
+      checkRemove = remove;
+    }
 
     @Override
     public void run() {
-      for (int i = 0; i < numIterations * 0.5; i++) {
-        addListLock.lock();
-        try {
-          if (mapOfAdded.size() > 0) {
-            int index = (int) Math.floor(Math.random() * mapOfAdded.size());
-            Integer value = (Integer) mapOfAdded.toArray()[index];
-            if (queue.contains(value)) {
-              result = result && true;
-              System.out.println("Checking ..." + value + " true");
-            } else {
-              result = false;
-              System.out.println("Checking ..." + value + " false");
+      for (int i = 0; i < numIterations; i++) {
+          if(!checkRemove)
+          {
+            if (mapOfAdded.size() > 0) {
+              addListLock.lock();
+              int index = (int) Math.floor(Math.random() * mapOfAdded.size());
+              Integer value = (Integer) mapOfAdded.toArray()[index];
+              addListLock.unlock();
+              if (queue.contains(value)) {
+                result = result && true;
+                System.out.println("Checking added " + value + " true");
+              } else {
+                result = false;
+                System.out.println("Checking added " + value + " false");
+              }
+            }
+          }else
+          {
+            if (mapOfRemoved.size() > 0) {
+              addListLock.lock();
+              int index = (int) Math.floor(Math.random() * mapOfRemoved.size());
+              Integer value = (Integer) mapOfRemoved.toArray()[index];
+              addListLock.unlock();
+              if (!queue.contains(value)) {
+                result = result && true;
+                System.out.println("Checking removed " + value + " true");
+              } else {
+                result = false;
+                System.out.println("Checking removed " + value + " false");
+              }
             }
           }
-        } finally {
-          addListLock.unlock();
-        }
-        randomDelay(1.0f, 1.5f);
+        randomDelay(0.5f, 1.5f);
       }
     }
   }
