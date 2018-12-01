@@ -38,7 +38,6 @@ public class ContainsValidator {
 
     ExecutorService executor = Executors.newFixedThreadPool(numThreads);
     ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(numThreads);
-    counter = 0;
 
     for (int i = 0; i < numThreads - 1; i++) {
       tasks.add(Executors.callable(remove ? new RemoveTask() : new AddTask()));
@@ -88,7 +87,8 @@ public class ContainsValidator {
           mapOfAdded.remove(value);
           mapOfRemoved.add(value);
           addListLock.unlock();
-
+          //Simulate delay to prevent immediate locking
+          randomDelay(0.f, 0.2f);
           queue.remove(value);
 
           System.out.println("Removing " + value);
@@ -111,6 +111,7 @@ public class ContainsValidator {
           // Remap random variable, avoids recalculating it
           int numToAdd = (int) (rng * MAX_NUM);
           queue.add(numToAdd);
+          
           addListLock.lock();
           mapOfAdded.add(numToAdd);
           addListLock.unlock();
