@@ -14,20 +14,18 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ContainsValidator {
 
-  static int counter;
   static Lock addListLock = new ReentrantLock();
   static HashSet<Integer> mapOfAdded = new HashSet<Integer>();
   static HashSet<Integer> mapOfRemoved = new HashSet<Integer>();
   static ConcurrentQueue<Integer> queue = new ConcurrentQueue<Integer>();
 
-  static final int numThreads = 2;
+  static final int numThreads = 5;
   static final int numIterations = 50;
   static final int MAX_NUM = 5000;
 
   static boolean result = true;
 
   public static void main(String[] args) {
-    boolean result;
     if (Verify(false) && Verify(true)) {
       System.out.println("Contains worked!");
     } else {
@@ -84,15 +82,14 @@ public class ContainsValidator {
       for (int i = 0; i < numIterations; i++) {
         double rng = Math.random();
         if (mapOfAdded.size() > 0) {
+          addListLock.lock();
           int index = (int) Math.floor(rng * mapOfAdded.size());
           Integer value = (Integer) mapOfAdded.toArray()[index];
-
-          queue.remove(value);
-
-          addListLock.lock();
           mapOfAdded.remove(value);
           mapOfRemoved.add(value);
           addListLock.unlock();
+
+          queue.remove(value);
 
           System.out.println("Removing " + value);
         }
