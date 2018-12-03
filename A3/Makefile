@@ -1,8 +1,8 @@
 .PHONY: test clean compile
 .DEFAULT_GOAL: test
 
-mutex: compile
-	cd target/classes && java ca.mcgill.ecse420.a2.MutexValidator
+matrix: compile
+	cd target/classes && java ca.mcgill.ecse420.a3.MatrixVectorMultiplication
 
 compile:
 	mvn -q clean compile
