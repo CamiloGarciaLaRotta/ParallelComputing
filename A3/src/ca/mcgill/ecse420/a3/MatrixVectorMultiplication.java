@@ -12,7 +12,7 @@ import java.util.function.BiFunction;
 public class MatrixVectorMultiplication {
 
   private static int MATRIX_SIZE = 2000;
-  private static int NUM_OF_THREADS = 5;
+  private static int NUM_OF_THREADS = 4;
 
   public static void main(String[] args) {
     // Generate two random matrices, same size
@@ -49,7 +49,7 @@ public class MatrixVectorMultiplication {
 
     for (int r=0; r<NUM_ROWS; r++) {
       for (int c=0; c<NUM_COLS; c++) {
-        result[c] += M[r][c] * V[c];
+        result[r] += M[r][c] * V[c];
       }
     }
 
@@ -74,15 +74,12 @@ public class MatrixVectorMultiplication {
     double[] result = new double[NUM_COLS];
 
     // instantiate an ExecutorService and M list of tasks to execute
-    final int numOfTasks = NUM_COLS;
     ExecutorService executor = Executors.newFixedThreadPool(NUM_OF_THREADS);
-    ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(numOfTasks);
+    ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(4);
 
-    for (int r=0; r<NUM_ROWS; r++) {
-      for (int c=0; c<NUM_COLS; c++) {
-        // add every dot product task to the list of tasks to execute
-        tasks.add(Executors.callable(new DotProductTask(M, V, result, r, c, NUM_COLS)));
-      }
+    for (int r=0; r<NUM_ROWS; r+=500) {
+      // add every dot product task to the list of tasks to execute
+      tasks.add(Executors.callable(new DotProductTask(M, V, result, r, NUM_COLS)));
     }
 
     try {
@@ -102,30 +99,33 @@ public class MatrixVectorMultiplication {
   private static class DotProductTask implements Runnable {
     double[][] M;
     double[] V, result;
-    int row, col, dim;
+    int row, dim;
     private Lock lock = new ReentrantLock();
 
-    public DotProductTask(double[][] M, double[] V, double[] result, final int row, final int col, final int dim) {
+    public DotProductTask(double[][] M, double[] V, double[] result, final int row, final int dim) {
       this.M = M;
       this.V = V;
       this.result = result;
       this.row = row;
-      this.col = col;
       this.dim = dim;
     }
 
     public void run() {
-      double result = 0;
+      double[] result = new double[500];
       // perform the dot product
-      for (int c=0; c<this.dim; c++) {
-        result += M[row][c] * V[c];
+      for (int r=this.row;r<this.row+500; r++){
+        for (int c=0; c<this.dim; c++) {
+          result[r] += M[r][c] * V[c];
+        }
       }
 
       // update the cell with the result of the dot product
       // this is the only operation that requires mutual exclusivity
       lock.lock();
       try {
-        this.result[this.col] = result;
+        for (int r=this.row;r<this.row+500;r++){
+          this.result[r] = result[r-this.row];
+        }
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
