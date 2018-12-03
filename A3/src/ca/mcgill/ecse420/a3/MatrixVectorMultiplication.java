@@ -12,7 +12,7 @@ import java.util.function.BiFunction;
 public class MatrixVectorMultiplication {
 
   private static int MATRIX_SIZE = 2000;
-  private static int NUM_OF_THREADS = 4;
+  private static int NUM_OF_THREADS = 25;
 
   public static void main(String[] args) {
     // Generate two random matrices, same size
@@ -75,11 +75,12 @@ public class MatrixVectorMultiplication {
 
     // instantiate an ExecutorService and M list of tasks to execute
     ExecutorService executor = Executors.newFixedThreadPool(NUM_OF_THREADS);
-    ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(4);
+    ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(NUM_OF_THREADS);
+    final int increment = NUM_ROWS/NUM_OF_THREADS;
 
-    for (int r=0; r<NUM_ROWS; r+=500) {
+    for (int r=0; r<NUM_ROWS; r+=increment) {
       // add every dot product task to the list of tasks to execute
-      tasks.add(Executors.callable(new DotProductTask(M, V, result, r, NUM_COLS)));
+      tasks.add(Executors.callable(new DotProductTask(M, V, result, r, NUM_COLS, increment)));
     }
 
     try {
@@ -99,21 +100,22 @@ public class MatrixVectorMultiplication {
   private static class DotProductTask implements Runnable {
     double[][] M;
     double[] V, result;
-    int row, dim;
+    int row, dim, increment;
     private Lock lock = new ReentrantLock();
 
-    public DotProductTask(double[][] M, double[] V, double[] result, final int row, final int dim) {
+    public DotProductTask(double[][] M, double[] V, double[] result, final int row, final int dim, final int increment) {
       this.M = M;
       this.V = V;
       this.result = result;
       this.row = row;
       this.dim = dim;
+      this.increment = increment;
     }
 
     public void run() {
-      double[] result = new double[500];
+      double[] result = new double[increment];
       // perform the dot product
-      for (int r=this.row;r<this.row+500; r++){
+      for (int r=this.row;r<this.row+increment; r++){
         for (int c=0; c<this.dim; c++) {
           result[r] += M[r][c] * V[c];
         }
@@ -123,7 +125,7 @@ public class MatrixVectorMultiplication {
       // this is the only operation that requires mutual exclusivity
       lock.lock();
       try {
-        for (int r=this.row;r<this.row+500;r++){
+        for (int r=this.row;r<this.row+increment;r++){
           this.result[r] = result[r-this.row];
         }
       } catch (Exception e) {
